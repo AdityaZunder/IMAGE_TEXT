@@ -21,14 +21,11 @@ vertexai.init(
     credentials=credentials
 )
 
-# Import GenerativeModel from vertexai
-from vertexai.generative_models import (GenerativeModel,
-                                        Image,
-                                        Part,)
-
-# Initialize the model
+# Initialize the models
 model = GenerativeModel("gemini-1.5-flash-001")
 multimodal_model = GenerativeModel("gemini-1.0-pro-vision-001")
+conversation_history = []  # List to store conversation history
+extracted_text = None  # Variable to store extracted text from the image
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -39,22 +36,14 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# Authenticate and get credentials
-credentials, PROJECT_ID = authenticate()
-
-# Initialize Vertex AI with project, location, and credentials
-vertexai.init(
-    project=PROJECT_ID,
-    location="asia-south1",
-    credentials=credentials
-)
-
 @app.route('/')
 def home():
     return "Flask Server is Running!"
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    global extracted_text  # Use global variable to store extracted text
+
     if 'file' not in request.files:
         logging.debug('No file part in request')
         return jsonify({'error': 'No file part'}), 400
@@ -72,7 +61,6 @@ def upload_file():
         file.save(file_path)
         logging.debug(f"File saved to: {file_path}")
 
-        # Check if the file exists and is valid
         if not os.path.isfile(file_path):
             logging.debug(f"File not found: {file_path}")
             return jsonify({'error': 'File not found after saving'}), 500
@@ -82,22 +70,65 @@ def upload_file():
 
         response = gemini_vision(contents, model=multimodal_model)
         logging.debug(f"AI Response: {response}")
-        return jsonify({'message': response}), 200
+
+        # Store the extracted text
+        extracted_text = response
+
+        # Add extracted text to conversation history
+        conversation_history.append({"ai": response})
+        summary_prompt = f"Give a 100-word brief of your understanding of the image and where the text is from : {response}"
+        summary_response = gemini_vision(summary_prompt, model=multimodal_model)
+
+        # Append summary to conversation history
+        conversation_history.append({"ai": summary_response})
+
+        return jsonify({'message': response, 'summary': summary_response}), 200
     except Exception as e:
         logging.error(f"Error processing image: {e}")
         return jsonify({'error': 'Failed to process image'}), 500
-   
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_input = request.json.get('message')  # Ensure this matches your frontend's payload
+    global conversation_history, extracted_text  # Use global variables for session history
+
+    user_input = request.json.get('message')
     if not user_input:
         return jsonify({'error': 'No input provided'}), 400
 
-    # Generate AI response using the gemini function
-    response_text = gemini(user_input, model)
-    
-    return jsonify({'response': response_text})  # Return AI response
+    # Append user input to conversation history
+    conversation_history.append({"user": user_input})
+
+    # Create the full multimodal prompt
+    prompt_contents = ["go through the chat history to keep in mind what's been spoken, but speak only in relevance to what's been asked, if nothing is been asked reply normally as you would to the question, be smart."]
+    prompt_contents += [f"User: {msg['user']}" for msg in conversation_history if 'user' in msg]
+    prompt_contents += [f"AI: {msg['ai']}" for msg in conversation_history if 'ai' in msg]
+
+    # Include the extracted text in the chat context if it exists
+    if extracted_text:
+        prompt_contents.append(f"Extracted Text: {extracted_text}")
+
+    try:
+        # Generate the AI response
+        final = gemini(prompt_contents, model)
+
+        # Append AI response to conversation history
+        conversation_history.append({"ai": final})
+
+        return jsonify({'response': final})
+
+    except ValueError as e:
+        logging.error(f"AI request failed: {e}")
+        # Clear conversation history and extracted text
+        conversation_history = []
+        extracted_text = None
+        return jsonify({'error': 'That is not allowed. Everything has been reset.'}), 403  # 403 Forbidden
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    global conversation_history, extracted_text
+    conversation_history = []  # Clear conversation history
+    extracted_text = None  # Clear extracted text
+    return jsonify({'message': 'Conversation history cleared.'}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
