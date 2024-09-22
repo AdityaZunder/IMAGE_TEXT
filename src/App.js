@@ -16,19 +16,24 @@ function App() {
   const handleImageUpload = async (files) => {
     try {
       const responses = await uploadFiles(files);
-      const extractedTexts = responses.map(response => response.message).join(', ');
-      setExtractedText(extractedTexts || 'No text extracted.');
-
+      const extractedTexts = responses.map(response => response.message).join('\n\n'); // Add two newlines for space
+  
+      // Append new extracted text to the existing one with an empty line between entries
+      setExtractedText(prevText => 
+        prevText === 'Text from image or video will appear here...' ? extractedTexts : prevText + '\n\n' + extractedTexts
+      );
+  
       // Assuming the summary comes from the API response
-      const summaryResponse = responses[0]?.summary; // Adjust based on your API response structure
+      const summaryResponse = responses[0]?.summary;
       setSummary(summaryResponse || 'No summary available.');
-
+  
     } catch (error) {
       console.error("Error during image upload:", error);
       setExtractedText("Failed to extract text.");
       setSummary(''); // Reset summary on error
     }
   };
+  
 
   const handleFolderUpload = (folderFiles) => {
     console.log("Folder of images uploaded:", folderFiles);

@@ -100,6 +100,10 @@ input[type="file"], input[type="text"] {
     border: 1px solid #444;
 }
 
+.extracted-text {
+    white-space: pre-wrap; /* Preserves newlines and spaces */
+  }
+
 .ai-chatbox {
     height: 50%;
     padding: 20px;
@@ -221,3 +225,10 @@ input[type="text"] {
     outline: none;
     border: 2px solid #888; /* Highlight on focus */
 }
+
+.image-display-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+  }
