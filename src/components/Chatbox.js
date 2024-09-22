@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const Chatbox = ({ summary }) => {
+const Chatbox = ({ summaries }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const chatRef = useRef(null);
@@ -16,10 +16,13 @@ const Chatbox = ({ summary }) => {
   }, [messages]);
 
   useEffect(() => {
-    if (summary) {
-      setMessages(prev => [...prev, { ai: summary }]); // Add summary to messages
+    if (summaries.length > 0) {
+      // Add each summary as a new message
+      summaries.forEach(summary => {
+        setMessages(prev => [...prev, { ai: summary }]);
+      });
     }
-  }, [summary]); // This effect runs whenever the summary prop changes
+  }, [summaries]); // This effect runs whenever the summaries prop changes
 
   const handleChat = async (event) => {
     if (event.key === 'Enter' && input.trim() !== '') {

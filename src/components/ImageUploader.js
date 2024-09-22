@@ -27,7 +27,7 @@ const ImageUploader = ({ handleImageUpload }) => {
           reader.onload = (event) => {
             previews.push(event.target.result);
             if (previews.length === imageFiles.length) {
-              setImagePreviews(previews);
+              setImagePreviews((prevPreviews) => [...prevPreviews, ...previews]); // Append new images
               handleImageUpload(imageFiles); // Pass the image files to the parent
             }
           };
@@ -54,7 +54,7 @@ const ImageUploader = ({ handleImageUpload }) => {
         reader.onload = (event) => {
           previews.push(event.target.result);
           if (previews.length === files.length) {
-            setImagePreviews(previews);
+            setImagePreviews((prevPreviews) => [...prevPreviews, ...previews]); // Append new images
             handleImageUpload(files); // Pass the image files to the parent
           }
         };
@@ -75,7 +75,7 @@ const ImageUploader = ({ handleImageUpload }) => {
       />
       <div id="image-display" className="image-display">
         {imagePreviews.length > 0 ? (
-          <div>
+          <div className="scroll-container">
             {imagePreviews.map((preview, index) => (
               <img key={index} src={preview} alt={`Preview ${index}`} style={{ maxWidth: '100%', marginBottom: '10px' }} />
             ))}

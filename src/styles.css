@@ -71,7 +71,22 @@ input[type="file"], input[type="text"] {
     max-height: 500px;
     overflow-y: auto;
 }
-
+.image-display {
+    max-height: 300px; /* Adjust the height as needed */
+    overflow-y: auto;  /* Enables vertical scrolling */
+    border: 1px solid #ccc; /* Optional: Add a border around the image display area */
+    padding: 10px;
+  }
+  
+  .scroll-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Adds spacing between images */
+  }
+  
+  input-section {
+    margin-bottom: 20px;
+  }
 /* Make the layouts of image and folder uploads the same */
 .image-display, .folder-display {
     display: flex;
