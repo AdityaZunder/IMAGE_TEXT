@@ -34,11 +34,6 @@ function App() {
     }
   };
 
-  const handleFolderUpload = (folderFiles) => {
-    console.log("Folder of images uploaded:", folderFiles);
-    setExtractedText("Folder uploaded successfully.");
-  };
-
   const handleVideoURL = (e) => {
     const videoURL = e.target.value;
     console.log("Entered video URL:", videoURL);
@@ -57,7 +52,7 @@ function App() {
         {isImageView ? (
           <div className="left-section">
             <ImageUploader handleImageUpload={handleImageUpload} />
-            <FolderUploader handleFolderUpload={handleFolderUpload} />
+            <FolderUploader handleImageUpload={handleImageUpload} /> {/* Pass handleImageUpload here */}
           </div>
         ) : (
           <VideoURL handleVideoURL={handleVideoURL} />

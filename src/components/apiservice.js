@@ -29,3 +29,13 @@ export const uploadFiles = async (files) => {
     throw error; // Re-throw to handle in the calling function
   }
 };
+
+// Updated uploadFolder function to use uploadFiles
+export const uploadFolder = async (files) => {
+  try {
+    return await uploadFiles(files);
+  } catch (error) {
+    console.error("Error uploading folder:", error);
+    throw error; // Re-throw to handle in the calling function
+  }
+};

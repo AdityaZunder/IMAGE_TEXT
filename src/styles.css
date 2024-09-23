@@ -116,7 +116,16 @@ input[type="file"], input[type="text"] {
 }
 
 .extracted-text {
-    white-space: pre-wrap; /* Preserves newlines and spaces */
+    max-height: 200px;  /* Set a maximum height */
+    overflow-y: auto;   /* Enable vertical scrolling */
+    white-space: pre-wrap; /* Preserve newlines and spaces */
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-family: monospace;
+    font-size: 14px;
   }
 
 .ai-chatbox {

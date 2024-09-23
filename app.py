@@ -33,6 +33,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Ensure the uploads folder exists
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -57,7 +58,17 @@ def upload_file():
     logging.debug(f"Received file: {file.filename}")
 
     try:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        # Extract folder name from the file path if it contains one
+        folder_name = os.path.dirname(file.filename)
+        upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], folder_name)
+
+        # Create the folder if it doesn't exist
+        if folder_name and not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+            logging.debug(f"Created folder: {upload_folder}")
+
+        # Save the file inside the created folder or default to the main uploads folder
+        file_path = os.path.join(upload_folder, os.path.basename(file.filename))
         file.save(file_path)
         logging.debug(f"File saved to: {file_path}")
 
@@ -65,9 +76,9 @@ def upload_file():
             logging.debug(f"File not found: {file_path}")
             return jsonify({'error': 'File not found after saving'}), 500
 
+        # Process the image with AI
         image1 = Image.load_from_file(file_path)
         contents = ["display only the text in the image", image1]
-
         response = gemini_vision(contents, model=multimodal_model)
         logging.debug(f"AI Response: {response}")
 
@@ -76,13 +87,14 @@ def upload_file():
 
         # Add extracted text to conversation history
         conversation_history.append({"ai": response})
-        summary_prompt = f"Give a 100-word brief of your understanding of the image and where the text is from : {response}"
+        summary_prompt = f"Give a 100-word brief of your understanding of the image and where the text is from: {response}"
         summary_response = gemini_vision(summary_prompt, model=multimodal_model)
 
         # Append summary to conversation history
         conversation_history.append({"ai": summary_response})
 
         return jsonify({'message': response, 'summary': summary_response}), 200
+
     except Exception as e:
         logging.error(f"Error processing image: {e}")
         return jsonify({'error': 'Failed to process image'}), 500
