@@ -9,13 +9,13 @@ const Header = ({ switchToImage, switchToURL, activeTab }) => {
           className={`tab-button ${activeTab === 'image' ? 'active' : ''}`} 
           onClick={switchToImage}
         >
-          Image Upload
+          Image To Text
         </button>
         <button 
           className={`tab-button ${activeTab === 'video' ? 'active' : ''}`} 
           onClick={switchToURL}
         >
-          Video URL
+          Youtube Video to Text
         </button>
       </div>
     </header>
