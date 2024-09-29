@@ -20,13 +20,30 @@ export const uploadFile = async (file) => {
   }
 };
 
+// Modify the uploadFiles function to introduce a delay between each file upload.
 export const uploadFiles = async (files) => {
   try {
-    const uploadPromises = Array.from(files).map(file => uploadFile(file));
-    return await Promise.all(uploadPromises); // Wait for all uploads to finish
+    const uploadPromises = [];
+
+    // Add a delay between each file upload to avoid overloading the backend
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      const uploadPromise = new Promise((resolve) => {
+        setTimeout(async () => {
+          const response = await uploadFile(file);
+          resolve(response);
+        }, i * 500); // 500ms delay between each file
+      });
+
+      uploadPromises.push(uploadPromise);
+    }
+
+    // Wait for all uploads to complete
+    return await Promise.all(uploadPromises);
   } catch (error) {
     console.error("Error uploading files:", error);
-    throw error; // Re-throw to handle in the calling function
+    throw error;
   }
 };
 

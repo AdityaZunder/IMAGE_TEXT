@@ -1,25 +1,30 @@
 import React, { useState } from 'react';
 import { uploadFiles } from './apiservice.js';
 
-const FolderUploader = ({ handleImageUpload }) => {  // Ensure the function is passed as a prop
+const FolderUploader = ({ handleImageUpload }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleFolderChange = async (e) => {
     const folderFiles = e.target.files;
-    console.log("Total files:", folderFiles.length); // Debugging
-
+    console.log("Total files:", folderFiles.length);
+  
     if (folderFiles.length > 0) {
       const validFiles = Array.from(folderFiles).filter(file => 
-        file.name && !file.name.endsWith('.DS_Store') && file.size > 0 // Filter out unnecessary files
+        file.name && !file.name.endsWith('.DS_Store') && file.size > 0 // Filter unnecessary files
       );
-
-      console.log("Valid files:", validFiles.length); // Debugging
-
+  
+      console.log("Valid files:", validFiles.length);
+  
       if (validFiles.length > 0) {
         try {
-          await handleFilesUpload(validFiles);  // Call the function to upload files
+          // Delay the upload slightly to ensure the backend is ready
+          setTimeout(async () => {
+            await handleFilesUpload(validFiles);  // Call the function to upload files
+          }, 5000);  // Delay upload by 5000ms
         } catch (error) {
           console.error("Error uploading files:", error);
+          setErrorMessage("Error uploading files. Please try again."); // Set error message
         }
       } else {
         alert("No valid files to upload.");
@@ -28,22 +33,28 @@ const FolderUploader = ({ handleImageUpload }) => {  // Ensure the function is p
   };
 
   const handleFilesUpload = async (files) => {
-    const responses = await uploadFiles(files);
-    
-    const previews = [];
-    files.forEach((file, index) => {
+    try {
+      const responses = await uploadFiles(files); // API call to upload files
+      const previews = await Promise.all(files.map(file => readFileAsDataURL(file))); // Async file reading
+      
+      setImagePreviews((prevPreviews) => [...prevPreviews, ...previews]); // Append new previews
+      handleImageUpload(files); // Notify parent of image upload
+
+      alert(`${files.length} file(s) uploaded successfully.`);
+    } catch (error) {
+      console.error("Error reading files:", error);
+      setErrorMessage("Failed to read or upload some files.");
+    }
+  };
+
+  // Helper function to read file and return a Promise
+  const readFileAsDataURL = (file) => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        previews.push(event.target.result);
-        if (previews.length === files.length) {
-          setImagePreviews((prevPreviews) => [...prevPreviews, ...previews]); // Append new images
-          handleImageUpload(files);  // Pass the images to the parent component's function
-        }
-      };
+      reader.onload = (event) => resolve(event.target.result);
+      reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-
-    alert(`${files.length} file(s) uploaded.`);
   };
 
   return (
@@ -58,6 +69,7 @@ const FolderUploader = ({ handleImageUpload }) => {  // Ensure the function is p
         multiple
         onChange={handleFolderChange}
       />
+      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
       <div id="folder-display" className="folder-display">
         {imagePreviews.length > 0 ? (
           <div className="scroll-container">
